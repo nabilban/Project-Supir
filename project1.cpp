@@ -80,37 +80,27 @@ void prosesPesanan()
     // Tampilkan semua pesanan yang ada
     Order *current = front;
 
-    cout << "----------------------------------" << endl;
-    cout << "|   Daftar Pesanan yang Tersedia  |" << endl;
-    cout << "----------------------------------" << endl;
-    cout << '\n';
-
     while (current != nullptr)
     {
-        cout << "----------------------------------" << endl;
+        cout << "<==============================>" << endl;
         cout << "- Pesanan ID: " << current->id << endl;
         cout << "- Nama Pelanggan: " << current->nama << endl;
         cout << "- Nama Sopir: " << current->supir << endl;
         cout << "- Tujuan: " << current->tujuan << endl;
-        cout << "----------------------------------" << endl;
-        cout << endl;
 
         current = current->pNext;
     }
 
     if (front == nullptr)
     {
-        cout << "----------------------------" << endl;
-        cout << "|   Tidak Ada Pesanan      |" << endl;
-        cout << "|   Yang Tersedia Saat Ini |" << endl;
-        cout << "----------------------------" << endl;
-        cout << '\n';
-
+        cout << "<==============================>" << endl;
+        cout << " Tidak ada pesanan yang tersedia " << endl;
         return;
     }
 
     // Meminta admin untuk memasukkan ID pesanan yang ingin diproses
     string idPesanan;
+    cout << "<==============================>" << endl;
     cout << "> Masukkan ID Pesanan yang Ingin Diproses: ";
     cin >> idPesanan;
 
@@ -127,48 +117,41 @@ void prosesPesanan()
     // Memeriksa apakah pesanan dengan ID yang dimasukkan ditemukan
     if (current == nullptr)
     {
-        cout << "------------------------------" << endl;
-        cout << "|   Pesanan  dengan ID       |" << endl;
-        cout << "|   Tersebut Tidak Ditemukan |" << endl;
-        cout << "------------------------------" << endl;
+        membersihkanConsole();
+        cout << "<==============================>" << endl;
+        cout << " Pesanan dengan ID " << idPesanan << " tidak ditemukan " << endl;
         return;
     }
 
     // Menampilkan detail pesanan yang akan diproses
     membersihkanConsole();
-    cout << "----------------------------------" << endl;
-    cout << "|   Memproses Pesanan Taksi...   |" << endl;
-    cout << "----------------------------------" << endl;
-    cout << '\n';
 
-    cout << "----------------------------------" << endl;
+    cout << "<==============================>" << endl;
     cout << "- Pesanan ID: " << current->id << endl;
     cout << "- Nama Pelanggan: " << current->nama << endl;
     cout << "- Supir: " << current->supir << endl;
     cout << "- Plat Nomor: " << current->platNomor << endl;
     cout << "- Tujuan: " << current->tujuan << endl;
-    cout << "----------------------------------" << endl;
-    cout << "\n";
+    cout << "<==============================>" << endl;
 
     // Menampilkan opsi untuk admin
-    cout << "--------------------------" << endl;
+    cout << "<==============================>" << endl;
+    cout << "Pilihan Yang Tersedia : " << endl;
     cout << "(1) Terima Pesanan" << endl;
     cout << "(2) Tolak Pesanan" << endl;
     cout << "(3) Batal" << endl;
-    cout << "--------------------------" << endl;
-    cout << "\n";
+    cout << "<==============================>" << endl;
 
     int choice;
-    cout << "Pilihan Anda: ";
+    cout << "> ";
     cin >> choice;
 
     switch (choice)
     {
     case 1:
         membersihkanConsole();
-        cout << "------------------------" << endl;
-        cout << "|   Pesanan diterima   |" << endl;
-        cout << "------------------------" << endl;
+        cout << "<==============================>" << endl;
+        cout << "Pesanan Diterima" << endl;
         // Implementasi untuk memproses pesanan diterima
 
         // Temukan pesanan yang sesuai di dalam antrian
@@ -187,9 +170,8 @@ void prosesPesanan()
         break;
     case 2:
         membersihkanConsole();
-        cout << "-----------------------" << endl;
-        cout << "|   Pesanan ditolak   |" << endl;
-        cout << "-----------------------" << endl;
+        cout << "<==============================>" << endl;
+        cout << "Pesanan ditolak" << endl;
 
         // Temukan pesanan yang sesuai di dalam antrian
         if (prevPesanan != nullptr)
@@ -207,17 +189,14 @@ void prosesPesanan()
         break;
     case 3:
         membersihkanConsole();
-        cout << "-------------------------------------" << endl;
-        cout << "|   Pemrosesan Pesanan Dibatalkan   |" << endl;
-        cout << "-------------------------------------" << endl;
+        cout << "<==============================>" << endl;
+        cout << "Pemrosesan Pesanan Dibatalkan" << endl;
+
         return;
         break;
     default:
         membersihkanConsole();
-        cout << "-------------------------------------" << endl;
-        cout << "| Opsi Tidak Valid                  |" << endl;
-        cout << "| Mohon Masukkan Opsi Yang Tersedia |" << endl;
-        cout << "-------------------------------------" << endl;
+        cout << "Opsi tidak valid" << endl;
     }
 }
 
@@ -294,30 +273,18 @@ void orderTaxi()
     if (sopirYangDipesan == nullptr)
     {
         membersihkanConsole();
-        cout << "-------------------------------------------------- \n";
-        cout << "| Maaf, tidak ada sopir yang tersedia saat ini   | \n";
-        cout << "-------------------------------------------------- \n";
+        cout << "Tidak ada sopir yang tersedia." << endl;
         return;
     }
-
-    cout << "------------------" << endl;
-    cout << "|   Order Taxi   |" << endl;
-    cout << "------------------" << endl;
-    cout << '\n';
-
     string tujuan;
     string namaPelanggan;
 
-    cout << "-- Nama: \n";
-    cout << "> Input: ";
+    cout << "Nama Penumpang : ";
     cin.ignore();
     getline(cin, namaPelanggan);
-    cout << '\n';
 
-    cout << "-- Masukkan tujuan Anda" << endl;
-    cout << "> Input: ";
+    cout << "Masukkan tujuan Anda : ";
     cin >> tujuan;
-    cout << '\n';
 
     string namaSopir = sopirYangDipesan->nama;
     string platNomor = "L 1996 YZ."; // Misalnya untuk sementara di set kosong
@@ -327,11 +294,14 @@ void orderTaxi()
                  platNomor, tujuan);
 
     membersihkanConsole();
-    cout << "---------------------------------------------" << endl;
-    cout << "| Terima kasih! Pesanan Anda telah kami terima |" << endl;
-    cout << "| Sopir dengan nama " << namaSopir
-         << " akan segera datang! |\n";
-    cout << "---------------------------------------------" << endl;
+    cout << "<==============================>" << endl;
+    cout << "Pesanan Anda Telah Diterima" << endl;
+    cout << "<==============================>" << endl;
+    cout << "Nama Sopir: " << namaSopir << endl;
+    cout << "Plat Nomor: " << platNomor << endl;
+    cout << "Tujuan: " << tujuan << endl;
+    cout << "<==============================>" << endl;
+    return;
 }
 
 //**PRAKTIKUM 1**//
@@ -461,6 +431,7 @@ DataSupir CariDataSupirById()
     }
 
     cout << "Masukkan ID Supir yang ingin dicari: ";
+
     string inputId;
     cin >> inputId;
 
@@ -747,14 +718,14 @@ void InitializeDummyData()
     supir1->next = nullptr;
 
     DataSupir *supir2 = new DataSupir;
-    supir2->id = "04130";
+    supir2->id = "07180";
     supir2->nama = "M Farhan Nabil";
-    supir2->jenisKelamin = 'P';
+    supir2->jenisKelamin = 'L';
     supir2->tanggalLahir.tanggal = 20;
     supir2->tanggalLahir.bulan = 3;
     supir2->tanggalLahir.tahun = 2005;
     supir2->alamat = "Palembang";
-    supir2->noHp = "987654321";
+    supir2->noHp = "082178332767";
     supir2->next = nullptr;
 
     // Add dummy data to the linked list
@@ -770,8 +741,8 @@ void InitializeDummyData()
         {
             temp = temp->next;
         }
-        temp->next = supir1;
-        supir1->next = supir2;
+        temp->next = supir1;   // Connect supir1 to the existing list
+        supir1->next = supir2; // Connect supir2 after supir1
     }
 }
 int main()
