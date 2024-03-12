@@ -736,25 +736,25 @@ void hapusSemuaSopir(DataSupir *head)
 void InitializeDummyData()
 {
     DataSupir *supir1 = new DataSupir;
-    supir1->id = "D001";
-    supir1->nama = "John Doe";
+    supir1->id = "02130";
+    supir1->nama = "Sugeng Pangestu";
     supir1->jenisKelamin = 'L';
-    supir1->tanggalLahir.tanggal = 15;
-    supir1->tanggalLahir.bulan = 5;
-    supir1->tanggalLahir.tahun = 1985;
-    supir1->alamat = "123 Street, City";
+    supir1->tanggalLahir.tanggal = 19;
+    supir1->tanggalLahir.bulan = 2;
+    supir1->tanggalLahir.tahun = 1999;
+    supir1->alamat = "Surabaya";
     supir1->noHp = "1234567890";
     supir1->next = nullptr;
 
     DataSupir *supir2 = new DataSupir;
-    supir2->id = "D002";
-    supir2->nama = "Jane Doe";
+    supir2->id = "04130";
+    supir2->nama = "M Farhan Nabil";
     supir2->jenisKelamin = 'P';
     supir2->tanggalLahir.tanggal = 20;
-    supir2->tanggalLahir.bulan = 8;
-    supir2->tanggalLahir.tahun = 1990;
-    supir2->alamat = "456 Avenue, Town";
-    supir2->noHp = "9876543210";
+    supir2->tanggalLahir.bulan = 3;
+    supir2->tanggalLahir.tahun = 2005;
+    supir2->alamat = "Palembang";
+    supir2->noHp = "987654321";
     supir2->next = nullptr;
 
     // Add dummy data to the linked list
