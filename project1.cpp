@@ -11,6 +11,7 @@ struct Date
 };
 struct DataSupir
 {
+    string platnomor;
     string id;
     string nama;
     string alamat;
@@ -18,6 +19,7 @@ struct DataSupir
     char jenisKelamin;
     string noHp;
     DataSupir *next;
+    DataSupir *prev;
 };
 struct Order
 {
@@ -30,7 +32,10 @@ struct Order
 };
 
 // Global variable to store the driver data
-DataSupir *head = nullptr;
+DataSupir *kepala;
+DataSupir *ekor;
+DataSupir *head = nullptr; // saat ini
+
 Order *proses = nullptr;
 Order *front = nullptr;
 Order *rear = nullptr;
@@ -63,7 +68,6 @@ void enqueueOrder(const string &id,
 void dequeueOrder();
 int hitungTotalSopir();
 void orderTaxi();
-DataSupir *pilihSopirSecaraAcak();
 void prosesPesanan();
 
 // Function to clear the console
@@ -71,6 +75,8 @@ void membersihkanConsole()
 {
     cout << "\033[2J\033[1;1H"; // Clears the console
 }
+//**PRAKTIKUM 3**//
+
 //**PRAKTIKUM 2**//
 
 void prosesPesanan()
@@ -252,24 +258,23 @@ int hitungTotalSopir()
     return total;
 }
 
-DataSupir *pilihSopirSecaraAcak()
+DataSupir supirSekarang()
 {
-    if (head == nullptr)
-        return nullptr;
-
-    int totalSopir = hitungTotalSopir();
-    int indeksSopirAcak = rand() % totalSopir;
-
     DataSupir *temp = head;
-    for (int i = 0; i < indeksSopirAcak; ++i)
+    while (temp != nullptr)
+    {
+        if (temp->id == proses->supir)
+        {
+            return *temp;
+        }
         temp = temp->next;
-
-    return temp;
+    }
+    return DataSupir();
 }
 
 void orderTaxi()
 {
-    DataSupir *sopirYangDipesan = pilihSopirSecaraAcak();
+    DataSupir *sopirYangDipesan;
     if (sopirYangDipesan == nullptr)
     {
         membersihkanConsole();
@@ -302,6 +307,78 @@ void orderTaxi()
     cout << "Tujuan: " << tujuan << endl;
     cout << "<==============================>" << endl;
     return;
+}
+
+void cetakSupirSekarang()
+{
+    if (head == nullptr)
+    {
+        membersihkanConsole();
+        cout << "Tidak ada pesanan yang sedang diproses." << endl;
+        return;
+    }
+    else
+    {
+        cout << "<==============================>" << endl;
+        cout << "Nama Sopir: " << head->nama << endl;
+        cout << "ID Sopir: " << head->id << endl;
+        cout << "Jenis Kelamin: " << ((head->jenisKelamin == 'L') ? "Laki-laki" : "Perempuan") << endl;
+        cout << "Tanggal Lahir: " << head->tanggalLahir.tanggal << "-" << head->tanggalLahir.bulan << "-" << head->tanggalLahir.tahun << endl;
+        cout << "Alamat: " << head->alamat << endl;
+        cout << "No HP: " << head->noHp << endl;
+        cout << " Plat Nomor: " << head->id << endl;
+        cout << "<==============================>" << endl;
+    }
+}
+
+void supirSelanjutnya()
+{
+    if (head == nullptr)
+    {
+        membersihkanConsole();
+        cout << "Tidak ada Data supir tersedia" << endl;
+        return;
+    }
+    if (head != nullptr && head->next != nullptr)
+    {
+        head = head->next;
+        cetakSupirSekarang();
+    }
+    else
+    {
+        membersihkanConsole();
+        cout << "Tidak ada data supir berikutnya. Kembali ke awal." << endl;
+        head = kepala;
+
+        cetakSupirSekarang();
+    }
+}
+
+void supiSebelumnya()
+{
+    if (kepala == nullptr)
+    {
+        membersihkanConsole();
+        cout << "Tidak ada Data supir tersedia" << endl;
+        return;
+    }
+    if (head == kepala)
+    {
+        while (head->next != nullptr)
+        {
+            head = head->next;
+        }
+    }
+    else
+    {
+        DataSupir *temp = kepala;
+        while (temp->next != head)
+        {
+            temp = temp->next;
+        }
+        head = temp;
+    }
+    cetakSupirSekarang();
 }
 
 //**PRAKTIKUM 1**//
@@ -662,11 +739,12 @@ void UserPrivilage()
     int pilihan;
     while (true)
     {
-        LihatDataSupir();
         cout << "<==============================>" << endl;
         cout << "User Menu:" << endl;
         cout << "1) Order By Id " << endl;
-        cout << "2) Kembali" << endl;
+        cout << "2) Supir Selanjutnya" << endl;
+        cout << "3) Supir sebelumnya" << endl;
+        cout << "4) Kembali" << endl;
         cout << "<==============================>" << endl;
         cout << "> ";
         cin >> pilihan;
@@ -679,9 +757,18 @@ void UserPrivilage()
             orderTaxi();
             break;
         case 2:
+            supirSelanjutnya();
+            cout << "Supir Selanjutnya" << endl;
+            break;
+        case 3:
+            supiSebelumnya();
+            cout << "Supir Sebelumnya" << endl;
+            break;
+        case 4:
             membersihkanConsole();
             cout << "Kembali ke menu utama" << endl;
             return;
+
         default:
             membersihkanConsole();
             cout << " Opsi Tidak Valid                  " << endl;
@@ -773,6 +860,7 @@ int main()
             break;
         case 2:
             membersihkanConsole();
+            cetakSupirSekarang();
             UserPrivilage();
             break;
         case 3:
