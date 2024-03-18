@@ -1,7 +1,8 @@
 #include <iostream>
 #include <string>
-
+#include <queue>
 using namespace std;
+
 // Model data construct
 struct Date
 {
@@ -9,6 +10,7 @@ struct Date
     int bulan;
     int tahun;
 };
+
 struct DataSupir
 {
     string platnomor;
@@ -18,9 +20,8 @@ struct DataSupir
     Date tanggalLahir;
     char jenisKelamin;
     string noHp;
-    DataSupir *next;
-    DataSupir *prev;
 };
+
 struct Order
 {
     string id;
@@ -31,18 +32,25 @@ struct Order
     Order *pNext;
 };
 
-// Global variable to store the driver data
-DataSupir *kepala;
-DataSupir *ekor;
-DataSupir *head = nullptr; // saat ini
+struct Node
+{
+    DataSupir data;
+    Node *next;
+};
 
+// Global variable to store the driver data
+Node *firstDriver = nullptr;
+Node *prevDriver = nullptr;
+Node *currentDriver = nullptr;
+
+// Global variable to store the order data
 Order *proses = nullptr;
 Order *front = nullptr;
 Order *rear = nullptr;
 
 // Function prototype
 void membersihkanConsole();
-void hapusSemuaSopir(DataSupir *head);
+void hapusSemuaSopir(DataSupir *saatIni);
 string IdGenerator(const string &nama, char jenisKelamin, const Date &tanggalLahir);
 bool isIdExist(const string &id);
 void TambahDataSupir();
@@ -249,7 +257,7 @@ void dequeueOrder()
 int hitungTotalSopir()
 {
     int total = 0;
-    DataSupir *temp = head;
+    Node *temp = currentDriver;
     while (temp != nullptr)
     {
         total++;
@@ -258,23 +266,23 @@ int hitungTotalSopir()
     return total;
 }
 
-DataSupir supirSekarang()
+Node supirSekarang()
 {
-    DataSupir *temp = head;
+    Node *temp = currentDriver;
     while (temp != nullptr)
     {
-        if (temp->id == proses->supir)
+        if (temp->data.id == proses->supir)
         {
             return *temp;
         }
         temp = temp->next;
     }
-    return DataSupir();
+    return Node();
 }
 
 void orderTaxi()
 {
-    DataSupir *sopirYangDipesan;
+    Node *sopirYangDipesan;
     if (sopirYangDipesan == nullptr)
     {
         membersihkanConsole();
@@ -291,7 +299,7 @@ void orderTaxi()
     cout << "Masukkan tujuan Anda : ";
     cin >> tujuan;
 
-    string namaSopir = sopirYangDipesan->nama;
+    string namaSopir = sopirYangDipesan->data.nama;
     string platNomor = "L 1996 YZ."; // Misalnya untuk sementara di set kosong
 
     // Menambahkan order ke dalam queue
@@ -311,7 +319,7 @@ void orderTaxi()
 
 void cetakSupirSekarang()
 {
-    if (head == nullptr)
+    if (currentDriver == nullptr)
     {
         membersihkanConsole();
         cout << "Tidak ada pesanan yang sedang diproses." << endl;
@@ -320,64 +328,65 @@ void cetakSupirSekarang()
     else
     {
         cout << "<==============================>" << endl;
-        cout << "Nama Sopir: " << head->nama << endl;
-        cout << "ID Sopir: " << head->id << endl;
-        cout << "Jenis Kelamin: " << ((head->jenisKelamin == 'L') ? "Laki-laki" : "Perempuan") << endl;
-        cout << "Tanggal Lahir: " << head->tanggalLahir.tanggal << "-" << head->tanggalLahir.bulan << "-" << head->tanggalLahir.tahun << endl;
-        cout << "Alamat: " << head->alamat << endl;
-        cout << "No HP: " << head->noHp << endl;
-        cout << " Plat Nomor: " << head->id << endl;
+        cout << "Nama Sopir: " << currentDriver->data.nama << endl;
+        cout << "ID Sopir: " << currentDriver->data.id << endl;
+        cout << "Jenis Kelamin: " << ((currentDriver->data.jenisKelamin == 'L') ? "Laki-laki" : "Perempuan") << endl;
+        cout << "Tanggal Lahir: " << currentDriver->data.tanggalLahir.tanggal << "-" << currentDriver->data.tanggalLahir.bulan << "-" << currentDriver->data.tanggalLahir.tahun << endl;
+        cout << "Alamat: " << currentDriver->data.alamat << endl;
+        cout << "No HP: " << currentDriver->data.noHp << endl;
+        cout << " Plat Nomor: " << currentDriver->data.id << endl;
         cout << "<==============================>" << endl;
     }
 }
 
 void supirSelanjutnya()
 {
-    if (head == nullptr)
+    if (firstDriver == nullptr)
     {
         membersihkanConsole();
         cout << "Tidak ada Data supir tersedia" << endl;
         return;
     }
-    if (head != nullptr && head->next != nullptr)
+
+    if (currentDriver != nullptr && currentDriver->next != nullptr)
     {
-        head = head->next;
+        currentDriver = currentDriver->next;
+        membersihkanConsole();
         cetakSupirSekarang();
     }
     else
     {
         membersihkanConsole();
-        cout << "Tidak ada data supir berikutnya. Kembali ke awal." << endl;
-        head = kepala;
-
+        cout << "Tidak ada data sopir berikutnya" << endl;
         cetakSupirSekarang();
     }
 }
 
-void supiSebelumnya()
+void supirSebelumnya()
 {
-    if (kepala == nullptr)
+
+    if (firstDriver == nullptr)
     {
         membersihkanConsole();
-        cout << "Tidak ada Data supir tersedia" << endl;
+        cout << "Tidak ada data sopir yang tersedia." << endl;
         return;
     }
-    if (head == kepala)
+
+    if (currentDriver == firstDriver)
     {
-        while (head->next != nullptr)
-        {
-            head = head->next;
-        }
+        membersihkanConsole();
+        cout << "Tidak ada data sopir sebelumnya." << endl;
+        cetakSupirSekarang();
+        return;
     }
-    else
+
+    Node *temp = firstDriver;
+    while (temp->next != currentDriver)
     {
-        DataSupir *temp = kepala;
-        while (temp->next != head)
-        {
-            temp = temp->next;
-        }
-        head = temp;
+        temp = temp->next;
     }
+    currentDriver = temp;
+    membersihkanConsole();
     cetakSupirSekarang();
 }
 
@@ -417,10 +426,10 @@ string IdGenerator(const string &nama, char jenisKelamin, const Date &tanggalLah
 
 bool isIdExist(const string &id)
 {
-    DataSupir *temp = head;
+    Node *temp = currentDriver;
     while (temp != nullptr)
     {
-        if (temp->id == id)
+        if (temp->data.id == id)
         {
             return true;
         }
@@ -432,37 +441,37 @@ bool isIdExist(const string &id)
 // Function to add new driver data
 void TambahDataSupir()
 {
-    DataSupir *supirBaru = new DataSupir;
+    Node *supirBaru = new Node;
 
     cout << "Nama                      : ";
     cin.ignore();
-    getline(cin, supirBaru->nama);
+    getline(cin, supirBaru->data.nama);
 
     cout << "Kelamin (L/P)             : ";
-    cin >> supirBaru->jenisKelamin;
+    cin >> supirBaru->data.jenisKelamin;
 
     cout << "Tanggal Lahir (dd-mm-yyyy): ";
-    cin >> supirBaru->tanggalLahir.tanggal >> supirBaru->tanggalLahir.bulan >> supirBaru->tanggalLahir.tahun;
+    cin >> supirBaru->data.tanggalLahir.tanggal >> supirBaru->data.tanggalLahir.bulan >> supirBaru->data.tanggalLahir.tahun;
 
     cout << "Alamat                    : ";
     cin.ignore();
-    getline(cin, supirBaru->alamat);
+    getline(cin, supirBaru->data.alamat);
 
     cout << "No HP                     : ";
     cin.ignore();
-    getline(cin, supirBaru->noHp);
+    getline(cin, supirBaru->data.noHp);
 
-    supirBaru->id = IdGenerator(supirBaru->nama, supirBaru->jenisKelamin, supirBaru->tanggalLahir);
+    supirBaru->data.id = IdGenerator(supirBaru->data.nama, supirBaru->data.jenisKelamin, supirBaru->data.tanggalLahir);
 
     supirBaru->next = nullptr;
 
-    if (head == nullptr)
+    if (currentDriver == nullptr)
     {
-        head = supirBaru;
+        currentDriver = supirBaru;
     }
     else
     {
-        DataSupir *temp = head;
+        Node *temp = currentDriver;
         while (temp->next != nullptr)
         {
             temp = temp->next;
@@ -478,33 +487,33 @@ void TambahDataSupir()
 // Function to view driver data one by one with previous and next options
 void LihatDataSupir()
 {
-    if (head == nullptr)
+    if (currentDriver == nullptr)
     {
         cout << "Tidak ada data supir." << endl;
         return;
     }
 
-    DataSupir *temp = head;
+    Node *temp = currentDriver;
     while (temp != nullptr)
     {
         cout << "<==============================>" << endl;
-        cout << "ID       : " << temp->id << endl;
-        cout << "Nama     : " << temp->nama << endl;
-        cout << "Kelamin  : " << ((temp->jenisKelamin == 'L') ? "Laki-laki" : "Perempuan") << endl;
-        cout << "Tgl Lahir: " << temp->tanggalLahir.tanggal << "-" << temp->tanggalLahir.bulan << "-" << temp->tanggalLahir.tahun << endl;
-        cout << "Alamat   : " << temp->alamat << endl;
-        cout << "No HP    : " << temp->noHp << endl;
+        cout << "ID       : " << temp->data.id << endl;
+        cout << "Nama     : " << temp->data.nama << endl;
+        cout << "Kelamin  : " << ((temp->data.jenisKelamin == 'L') ? "Laki-laki" : "Perempuan") << endl;
+        cout << "Tgl Lahir: " << temp->data.tanggalLahir.tanggal << "-" << temp->data.tanggalLahir.bulan << "-" << temp->data.tanggalLahir.tahun << endl;
+        cout << "Alamat   : " << temp->data.alamat << endl;
+        cout << "No HP    : " << temp->data.noHp << endl;
         temp = temp->next;
     }
 }
 // Function to search driver data by ID
 
-DataSupir CariDataSupirById()
+Node CariDataSupirById()
 {
-    if (head == nullptr)
+    if (currentDriver == nullptr)
     {
         cout << "Tidak ada data supir." << endl;
-        return DataSupir();
+        return Node();
     }
 
     cout << "Masukkan ID Supir yang ingin dicari: ";
@@ -512,33 +521,33 @@ DataSupir CariDataSupirById()
     string inputId;
     cin >> inputId;
 
-    DataSupir *current = head;
+    Node *current = currentDriver;
     while (current != nullptr)
     {
-        if (current->id == inputId)
+        if (current->data.id == inputId)
         {
             cout << "<==============================>" << endl;
-            cout << "ID       : " << current->id << endl;
-            cout << "Nama     : " << current->nama << endl;
-            cout << "Kelamin  : " << ((current->jenisKelamin == 'L') ? "Laki-laki" : "Perempuan") << endl;
-            cout << "Tgl Lahir: " << current->tanggalLahir.tanggal << "-" << current->tanggalLahir.bulan << "-" << current->tanggalLahir.tahun << endl;
-            cout << "Alamat   : " << current->alamat << endl;
-            cout << "No HP    : " << current->noHp << endl;
+            cout << "ID       : " << current->data.id << endl;
+            cout << "Nama     : " << current->data.nama << endl;
+            cout << "Kelamin  : " << ((current->data.jenisKelamin == 'L') ? "Laki-laki" : "Perempuan") << endl;
+            cout << "Tgl Lahir: " << current->data.tanggalLahir.tanggal << "-" << current->data.tanggalLahir.bulan << "-" << current->data.tanggalLahir.tahun << endl;
+            cout << "Alamat   : " << current->data.alamat << endl;
+            cout << "No HP    : " << current->data.noHp << endl;
             current = current->next;
         }
         else
         {
             cout << "Data supir dengan ID " << inputId << " tidak ditemukan." << endl;
-            return DataSupir();
+            return Node();
         }
     }
-    return DataSupir();
+    return Node();
 }
 
 // Function to edit driver data
 void EditDataSupir()
 {
-    if (head == nullptr)
+    if (currentDriver == nullptr)
     {
         cout << "Tidak ada data supir." << endl;
         return;
@@ -547,19 +556,19 @@ void EditDataSupir()
     cout << "Masukkan ID Supir yang ingin diubah: ";
     string inputId;
     cin >> inputId;
-    DataSupir *supirYangDiubah = head;
+    Node *supirYangDiubah = currentDriver;
     while (supirYangDiubah != nullptr)
     {
-        if (supirYangDiubah->id == inputId)
+        if (supirYangDiubah->data.id == inputId)
         {
             cout << "- Mengubah supir dengan Id " << inputId << " -" << endl;
             cout << "<==============================>" << endl;
-            cout << "ID       : " << supirYangDiubah->id << endl;
-            cout << "Nama     : " << supirYangDiubah->nama << endl;
-            cout << "Kelamin  : " << ((supirYangDiubah->jenisKelamin == 'L') ? "Laki-laki" : "Perempuan") << endl;
-            cout << "Tgl Lahir: " << supirYangDiubah->tanggalLahir.tanggal << "-" << supirYangDiubah->tanggalLahir.bulan << "-" << supirYangDiubah->tanggalLahir.tahun << endl;
-            cout << "Alamat   : " << supirYangDiubah->alamat << endl;
-            cout << "No HP    : " << supirYangDiubah->noHp << endl;
+            cout << "ID       : " << supirYangDiubah->data.id << endl;
+            cout << "Nama     : " << supirYangDiubah->data.nama << endl;
+            cout << "Kelamin  : " << ((supirYangDiubah->data.jenisKelamin == 'L') ? "Laki-laki" : "Perempuan") << endl;
+            cout << "Tgl Lahir: " << supirYangDiubah->data.tanggalLahir.tanggal << "-" << supirYangDiubah->data.tanggalLahir.bulan << "-" << supirYangDiubah->data.tanggalLahir.tahun << endl;
+            cout << "Alamat   : " << supirYangDiubah->data.alamat << endl;
+            cout << "No HP    : " << supirYangDiubah->data.noHp << endl;
             cout << "<==============================>" << endl;
             cout << "1. Ubah Nama" << endl;
             cout << "2. Ubah Kelamin" << endl;
@@ -576,20 +585,20 @@ void EditDataSupir()
             case 1:
                 cout << "Masukkan Nama yang baru: ";
                 cin.ignore();
-                getline(cin, supirYangDiubah->nama);
+                getline(cin, supirYangDiubah->data.nama);
                 break;
             case 2:
                 cout << "Masukkan Kelamin yang baru (L/P): ";
-                cin >> supirYangDiubah->jenisKelamin;
+                cin >> supirYangDiubah->data.jenisKelamin;
                 break;
             case 3:
                 cout << "Masukkan Alamat yang baru: ";
                 cin.ignore();
-                getline(cin, supirYangDiubah->alamat);
+                getline(cin, supirYangDiubah->data.alamat);
                 break;
             case 4:
                 cout << "Masukkan Tanggal Lahir yang baru (dd-mm-yyyy): ";
-                cin >> supirYangDiubah->tanggalLahir.tanggal >> supirYangDiubah->tanggalLahir.bulan >> supirYangDiubah->tanggalLahir.tahun;
+                cin >> supirYangDiubah->data.tanggalLahir.tanggal >> supirYangDiubah->data.tanggalLahir.bulan >> supirYangDiubah->data.tanggalLahir.tahun;
                 break;
             case 5:
                 membersihkanConsole();
@@ -611,7 +620,7 @@ void EditDataSupir()
 // Function to delete driver data
 void HapusDataSupir()
 {
-    if (head == nullptr)
+    if (currentDriver == nullptr)
     {
         cout << "Tidak ada data supir yang tersedia." << endl;
         return;
@@ -621,22 +630,22 @@ void HapusDataSupir()
     string inputId;
     cin >> inputId;
 
-    DataSupir *current = head;
-    DataSupir *previous = nullptr;
+    Node *current = currentDriver;
+    Node *previous = nullptr;
 
     while (current != nullptr)
     {
-        if (current->id == inputId)
+        if (current->data.id == inputId)
         {
             membersihkanConsole();
             cout << "<==============================>" << endl;
             cout << "\nSupir dengan data berikut akan dihapus :" << endl;
-            cout << "Nama     : " << current->nama << endl;
-            cout << "ID       : " << current->id << endl;
-            cout << "Kelamin  : " << ((current->jenisKelamin == 'L') ? "Laki-laki" : "Perempuan") << endl;
-            cout << "Tgl Lahir: " << current->tanggalLahir.tanggal << "-" << current->tanggalLahir.bulan << "-" << current->tanggalLahir.tahun << endl;
-            cout << "Alamat   : " << current->alamat << endl;
-            cout << "No HP    : " << current->noHp << endl;
+            cout << "Nama     : " << current->data.nama << endl;
+            cout << "ID       : " << current->data.id << endl;
+            cout << "Kelamin  : " << ((current->data.jenisKelamin == 'L') ? "Laki-laki" : "Perempuan") << endl;
+            cout << "Tgl Lahir: " << current->data.tanggalLahir.tanggal << "-" << current->data.tanggalLahir.bulan << "-" << current->data.tanggalLahir.tahun << endl;
+            cout << "Alamat   : " << current->data.alamat << endl;
+            cout << "No HP    : " << current->data.noHp << endl;
             cout << "<==============================>" << endl;
 
             cout << "apakah supir dengan id " << inputId << " yang dihapus? (y/n) : ";
@@ -650,7 +659,7 @@ void HapusDataSupir()
             }
             else if (previous == nullptr)
             {
-                head = current->next;
+                currentDriver = current->next;
             }
             else
             {
@@ -761,7 +770,7 @@ void UserPrivilage()
             cout << "Supir Selanjutnya" << endl;
             break;
         case 3:
-            supiSebelumnya();
+            supirSebelumnya();
             cout << "Supir Sebelumnya" << endl;
             break;
         case 4:
@@ -779,12 +788,12 @@ void UserPrivilage()
 }
 
 // Function to delete all driver data
-void hapusSemuaSopir(DataSupir *head)
+void hapusSemuaSopir(Node *saatIni)
 {
-    DataSupir *current = head;
+    Node *current = saatIni;
     while (current != nullptr)
     {
-        DataSupir *next = current->next;
+        Node *next = current->next;
         delete current;
         current = next;
     }
@@ -793,48 +802,27 @@ void hapusSemuaSopir(DataSupir *head)
 // Function to initialize dummy data
 void InitializeDummyData()
 {
-    DataSupir *supir1 = new DataSupir;
-    supir1->id = "02130";
-    supir1->nama = "Sugeng Pangestu";
-    supir1->jenisKelamin = 'L';
-    supir1->tanggalLahir.tanggal = 19;
-    supir1->tanggalLahir.bulan = 2;
-    supir1->tanggalLahir.tahun = 1999;
-    supir1->alamat = "Surabaya";
-    supir1->noHp = "1234567890";
-    supir1->next = nullptr;
+    DataSupir supir1 = {"L 1996 YZ,", "02130", "Sugeng Pangestu", "Surabaya", {19, 2, 1999}, 'L', "123456789"};
+    DataSupir supir2 = {"L 1996 YZ,", "07180", "M Farhan Nabil", "Palembang", {20, 3, 2005}, 'P', "987654321"};
+    // Initialize the first driver
+    Node *newDriver1 = new Node;
+    newDriver1->data = supir1;
+    newDriver1->next = nullptr;
+    firstDriver = newDriver1;
 
-    DataSupir *supir2 = new DataSupir;
-    supir2->id = "07180";
-    supir2->nama = "M Farhan Nabil";
-    supir2->jenisKelamin = 'L';
-    supir2->tanggalLahir.tanggal = 20;
-    supir2->tanggalLahir.bulan = 3;
-    supir2->tanggalLahir.tahun = 2005;
-    supir2->alamat = "Palembang";
-    supir2->noHp = "082178332767";
-    supir2->next = nullptr;
-
-    // Add dummy data to the linked list
-    if (head == nullptr)
-    {
-        head = supir1;
-        supir1->next = supir2;
-    }
-    else
-    {
-        DataSupir *temp = head;
-        while (temp->next != nullptr)
-        {
-            temp = temp->next;
-        }
-        temp->next = supir1;   // Connect supir1 to the existing list
-        supir1->next = supir2; // Connect supir2 after supir1
-    }
+    // Initialize the second driver
+    Node *newDriver2 = new Node;
+    newDriver2->data = supir2;
+    newDriver2->next = nullptr;
+    firstDriver->next = newDriver2;
 }
 int main()
 {
+    Node *head = nullptr;
     InitializeDummyData();
+    currentDriver = firstDriver;
+    prevDriver = nullptr;
+
     membersihkanConsole();
     cout << " Selamat Datang " << endl;
     cout << " di Project Supir " << endl;
@@ -879,7 +867,7 @@ int main()
             if (opsi_keluar == 'y' || opsi_keluar == 'Y')
             {
                 membersihkanConsole();
-                hapusSemuaSopir(head);
+                hapusSemuaSopir(currentDriver);
                 return 0;
             }
             else if (opsi_keluar == 'n' || opsi_keluar == 'N')
@@ -903,6 +891,6 @@ int main()
             break;
         }
     }
-    hapusSemuaSopir(head);
+    hapusSemuaSopir(currentDriver);
     return 0;
 }
