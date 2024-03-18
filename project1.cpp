@@ -10,6 +10,12 @@ struct Date
     int bulan;
     int tahun;
 };
+struct Mobil
+{
+    string platNomor;
+    string jenisMobil;
+    string brandMobil;
+};
 
 struct DataSupir
 {
@@ -19,28 +25,419 @@ struct DataSupir
     Date tanggalLahir;
     char jenisKelamin;
     string noHp;
-    DataSupir *next;
 };
 
-DataSupir *head = nullptr;
+const int MAX_SIZE = 100; // Ukuran maksimum stack
+struct StackMobil
+{
+    Mobil data[MAX_SIZE];
+    int top;
+};
+
+struct Order
+{
+    string id;
+    string nama;
+    string supir;
+    string platNomor;
+    string tujuan;
+    Order *pNext;
+};
+
+struct Node
+{
+    DataSupir data;
+    Node *next;
+};
+
+// Global variable to store the driver data
+Node *firstDriver = nullptr;
+Node *prevDriver = nullptr;
+Node *currentDriver = nullptr;
+
+Order *proses = nullptr;
+Order *front = nullptr;
+Order *rear = nullptr;
+
+int top; // Indeks elemen teratas stack
+int dataMobil[MAX_SIZE];
+
+// Function prototype
 void membersihkanConsole();
-void hapusSemuaSopir(DataSupir *head);
-string IdGenerator(const string &nama, char jenisKelamin, const Date &tanggalLahir);
-bool isIdExist(const string &id);
 void TambahDataSupir();
 void LihatDataSupir();
+Node CariDataSupirById();
 void EditDataSupir();
 void HapusDataSupir();
 void AdminPriviliage();
 void UserPrivilage();
-void membersihkanConsole();
+void hapusSemuaSopir(DataSupir *saatIni);
+bool isIdExist(const string &id);
+
+string IdGenerator(const string &nama, char jenisKelamin, const Date &tanggalLahir);
+void enqueueOrder(const string &id,
+                  const string &nama,
+                  const string &supir,
+                  const string &platNomor,
+                  const string &tujuan);
+
+void dequeueOrder();
+int hitungTotalSopir();
+Node *pilihSopirSecaraAcak();
+void prosesPesanan();
+void push(StackMobil &stack,
+          const std::string &platNomor,
+          const std::string &jenis,
+          const std::string &merk);
+void pop(StackMobil &stack);
+void orderTaxi();
+void tambahUnitMobil(StackMobil &stack);
 
 // Function to clear the console
 void membersihkanConsole()
 {
     cout << "\033[2J\033[1;1H"; // Clears the console
 }
+//**PRAKTIKUM 3**//
+// Fungsi untuk menambah unit mobil ke stack
 
+void push(
+    StackMobil &stack, const string &platNomor,
+    const string &jenis,
+    const string &merk)
+{
+    if (stack.top == MAX_SIZE - 1)
+    {
+        cout << "Stack penuh." << endl;
+        return;
+    }
+    stack.top++;
+    stack.data[stack.top].platNomor = platNomor;
+    stack.data[stack.top].jenisMobil = jenis;
+    stack.data[stack.top].brandMobil = merk;
+    cout << "Unit mobil berhasil ditambahkan ke dalam stack." << endl;
+}
+
+// Fungsi untuk menghapus unit mobil dari stack
+void pop(StackMobil &stack)
+{
+    if (stack.top == -1)
+    {
+        cout << "Stack kosong." << endl;
+        return;
+    }
+    stack.top--;
+    cout << "Unit mobil berhasil dihapus dari stack." << endl;
+}
+
+void display(const StackMobil &stack)
+{
+    if (stack.top == -1)
+    {
+        cout << "Stack kosong." << endl;
+        return;
+    }
+    cout << "Daftar Unit Mobil dalam Stack:" << endl;
+
+    for (int i = stack.top; i >= 0; i--)
+    {
+        cout << "Plat Nomor: " << stack.data[i].platNomor
+             << ", Jenis: " << stack.data[i].jenisMobil
+             << ", Merk: " << stack.data[i].brandMobil << endl;
+    }
+}
+void tambahUnitMobil(StackMobil &stack)
+{
+    string platNomor;
+    string jenisMobil;
+    string brandMobil;
+
+    cout << "Plat Nomor (ex: A XXXX AA ): ";
+    cin.ignore();
+    getline(cin, platNomor);
+
+    cout << "Jenis Mobil                : ";
+    cin.ignore();
+    getline(cin, jenisMobil);
+
+    cout << "Brand Mobil                : ";
+    cin.ignore();
+    getline(cin, brandMobil);
+
+    push(stack, platNomor, jenisMobil, brandMobil);
+    membersihkanConsole();
+}
+//**PRAKTIKUM 2**//
+
+void enqueueOrder(const string &id,
+                  const string &nama,
+                  const string &supir,
+                  const string &platNomor,
+                  const string &tujuan)
+{
+    Order *newOrder = new Order;
+    newOrder->id = id;
+    newOrder->nama = nama;
+    newOrder->supir = supir;
+    newOrder->platNomor = platNomor;
+    newOrder->tujuan = tujuan;
+    newOrder->pNext = nullptr;
+
+    if (front == nullptr && rear == nullptr)
+    {
+        front = rear = newOrder;
+        return;
+    }
+
+    rear->pNext = newOrder;
+    rear = newOrder;
+}
+
+void dequeueOrder()
+{
+    if (front == nullptr)
+    {
+        return;
+    }
+
+    Order *temp = front;
+    front = front->pNext;
+
+    if (front == nullptr)
+        rear = nullptr;
+
+    delete temp;
+}
+
+int hitungTotalSopir()
+{
+    int total = 0;
+    Node *temp = currentDriver;
+    while (temp != nullptr)
+    {
+        total++;
+        temp = temp->next;
+    }
+    return total;
+}
+
+Node supirSekarang()
+{
+    Node *temp = currentDriver;
+    while (temp != nullptr)
+    {
+        if (temp->data.id == proses->supir)
+        {
+            return *temp;
+        }
+        temp = temp->next;
+    }
+    return Node();
+}
+void prosesPesanan(StackMobil &stack)
+{
+    membersihkanConsole();
+
+    // Tampilkan semua pesanan yang ada
+    Order *current = front;
+
+    while (current != nullptr)
+    {
+        cout << "<==============================>" << endl;
+        cout << "- Pesanan ID: " << current->id << endl;
+        cout << "- Nama Pelanggan: " << current->nama << endl;
+        cout << "- Nama Sopir: " << current->supir << endl;
+        cout << "- Plat Nomor: " << current->platNomor << endl;
+        cout << "- Tujuan: " << current->tujuan << endl;
+
+        current = current->pNext;
+    }
+
+    if (front == nullptr)
+    {
+        cout << "<==============================>" << endl;
+        cout << " Tidak ada pesanan yang tersedia " << endl;
+        return;
+    }
+
+    // Meminta admin untuk memasukkan ID pesanan yang ingin diproses
+    string idPesanan;
+    cout << "<==============================>" << endl;
+    cout << "> Masukkan ID Pesanan yang Ingin Diproses: ";
+    cin >> idPesanan;
+
+    // Mencari pesanan berdasarkan ID yang dimasukkan oleh admin
+    current = front;
+    Order *prevPesanan = nullptr;
+
+    while (current != nullptr && current->id != idPesanan)
+    {
+        prevPesanan = current;
+        current = current->pNext;
+    }
+
+    // Memeriksa apakah pesanan dengan ID yang dimasukkan ditemukan
+    if (current == nullptr)
+    {
+        membersihkanConsole();
+        cout << "<==============================>" << endl;
+        cout << " Pesanan dengan ID " << idPesanan << " tidak ditemukan " << endl;
+        return;
+    }
+
+    // Menampilkan detail pesanan yang akan diproses
+    membersihkanConsole();
+
+    cout << "<==============================>" << endl;
+    cout << "- Pesanan ID: " << current->id << endl;
+    cout << "- Nama Pelanggan: " << current->nama << endl;
+    cout << "- Supir: " << current->supir << endl;
+    cout << "- Plat Nomor: " << current->platNomor << endl;
+    cout << "- Tujuan: " << current->tujuan << endl;
+
+    // Menampilkan opsi untuk admin
+    cout << "<==============================>" << endl;
+    cout << "Pilihan Yang Tersedia : " << endl;
+    cout << "(1) Terima Pesanan" << endl;
+    cout << "(2) Tolak Pesanan" << endl;
+    cout << "(3) Batal" << endl;
+    cout << "<==============================>" << endl;
+
+    int choice;
+    cout << "> ";
+    cin >> choice;
+
+    switch (choice)
+    {
+    case 1:
+        membersihkanConsole();
+        cout << "<==============================>" << endl;
+        cout << "Pesanan Diterima" << endl;
+        // Implementasi untuk memproses pesanan diterima
+
+        // Temukan pesanan yang sesuai di dalam antrian
+        if (prevPesanan != nullptr)
+        {
+            prevPesanan->pNext = current->pNext;
+        }
+        else
+        {
+            front = current->pNext;
+        }
+
+        delete current;
+        // Hapus pesanan dari antrian
+        dequeueOrder();
+        break;
+    case 2:
+        membersihkanConsole();
+        cout << "<==============================>" << endl;
+        cout << "Pesanan ditolak" << endl;
+
+        // Temukan pesanan yang sesuai di dalam antrian
+        if (prevPesanan != nullptr)
+        {
+            prevPesanan->pNext = current->pNext;
+        }
+        else
+        {
+            front = current->pNext;
+        }
+        delete current;
+
+        // Hapus pesanan dari antrian
+        dequeueOrder();
+        break;
+    case 3:
+        membersihkanConsole();
+        cout << "<==============================>" << endl;
+        cout << "Pemrosesan Pesanan Dibatalkan" << endl;
+
+        return;
+        break;
+    default:
+        membersihkanConsole();
+        cout << "Opsi tidak valid" << endl;
+    }
+}
+Node *pilihSopirSecaraAcak()
+{
+    if (currentDriver == nullptr)
+        return nullptr;
+
+    int totalSopir = hitungTotalSopir();
+    int indeksSopirAcak = rand() % totalSopir;
+
+    Node *temp = currentDriver;
+    for (int i = 0; i < indeksSopirAcak; ++i)
+        temp = temp->next;
+
+    return temp;
+}
+void orderTaxi(StackMobil &stack)
+{
+    Node *sopirYangDipesan = pilihSopirSecaraAcak();
+    if (sopirYangDipesan == nullptr)
+    {
+        membersihkanConsole();
+        cout << "Tidak ada sopir yang tersedia." << endl;
+        return;
+    }
+
+    if (stack.top == -1)
+    {
+        membersihkanConsole();
+        cout << "Tidak ada unit mobil yang tersedia." << endl;
+        cout << "Unit mobil sedang kosong harap menunggu..." << endl;
+
+        return;
+    }
+
+    string tujuan;
+    string namaPelanggan;
+
+    cout << "Nama Penumpang : ";
+    cin.ignore();
+    getline(cin, namaPelanggan);
+
+    cout << "Masukkan tujuan Anda : ";
+    cin >> tujuan;
+
+    string namaSopir = sopirYangDipesan->data.nama;
+    string platNomor = stack.data->platNomor;
+
+    // Menambahkan order ke dalam queue
+    enqueueOrder(IdGenerator("order", 'O', Date{0, 0, 0}), namaPelanggan, namaSopir, platNomor, tujuan);
+    membersihkanConsole();
+    cout << "<==============================>" << endl;
+    cout << "Pesanan Anda Telah Diterima" << endl;
+    cout << "<==============================>" << endl;
+    cout << "Nama Penumpang: " << namaPelanggan << endl;
+    cout << "Nama Sopir    : " << namaSopir << endl;
+    cout << "Plat Nomor    : " << stack.data->platNomor << endl;
+    cout << "Tujuan        : " << tujuan << endl;
+    return;
+    cout << "ingin melakukan order lagi? (y/n)" << endl;
+    char opsi;
+    cin >> opsi;
+    if (opsi == 'y' || opsi == 'Y')
+    {
+        orderTaxi();
+    }
+    else if (opsi == 'n' || opsi == 'N')
+    {
+        membersihkanConsole();
+        cout << "Kembali ke menu utama" << endl;
+        return UserPrivilage();
+    }
+    else
+    {
+        membersihkanConsole();
+        cout << "Opsi tidak valid" << endl;
+    }
+}
+
+//**PRAKTIKUM 1**//
 // Function to generate ID
 string IdGenerator(const string &nama, char jenisKelamin, const Date &tanggalLahir)
 {
@@ -76,10 +473,10 @@ string IdGenerator(const string &nama, char jenisKelamin, const Date &tanggalLah
 
 bool isIdExist(const string &id)
 {
-    DataSupir *temp = head;
+    Node *temp = currentDriver;
     while (temp != nullptr)
     {
-        if (temp->id == id)
+        if (temp->data.id == id)
         {
             return true;
         }
@@ -91,37 +488,37 @@ bool isIdExist(const string &id)
 // Function to add new driver data
 void TambahDataSupir()
 {
-    DataSupir *supirBaru = new DataSupir;
+    Node *supirBaru = new Node;
 
     cout << "Nama                      : ";
     cin.ignore();
-    getline(cin, supirBaru->nama);
+    getline(cin, supirBaru->data.nama);
 
     cout << "Kelamin (L/P)             : ";
-    cin >> supirBaru->jenisKelamin;
+    cin >> supirBaru->data.jenisKelamin;
 
     cout << "Tanggal Lahir (dd-mm-yyyy): ";
-    cin >> supirBaru->tanggalLahir.tanggal >> supirBaru->tanggalLahir.bulan >> supirBaru->tanggalLahir.tahun;
+    cin >> supirBaru->data.tanggalLahir.tanggal >> supirBaru->data.tanggalLahir.bulan >> supirBaru->data.tanggalLahir.tahun;
 
     cout << "Alamat                    : ";
     cin.ignore();
-    getline(cin, supirBaru->alamat);
+    getline(cin, supirBaru->data.alamat);
 
     cout << "No HP                     : ";
     cin.ignore();
-    getline(cin, supirBaru->noHp);
+    getline(cin, supirBaru->data.noHp);
 
-    supirBaru->id = IdGenerator(supirBaru->nama, supirBaru->jenisKelamin, supirBaru->tanggalLahir);
+    supirBaru->data.id = IdGenerator(supirBaru->data.nama, supirBaru->data.jenisKelamin, supirBaru->data.tanggalLahir);
 
     supirBaru->next = nullptr;
 
-    if (head == nullptr)
+    if (currentDriver == nullptr)
     {
-        head = supirBaru;
+        currentDriver = supirBaru;
     }
     else
     {
-        DataSupir *temp = head;
+        Node *temp = currentDriver;
         while (temp->next != nullptr)
         {
             temp = temp->next;
@@ -131,157 +528,143 @@ void TambahDataSupir()
 
     membersihkanConsole();
     cout << "Data supir berhasil ditambahkan." << endl;
-    return AdminPriviliage();
 }
 
-// Function to view driver data
-// Function to display the details of the current driver
-void TampilkanDetailSupir(DataSupir *supir)
+void cetakSupirSekarang()
 {
-    if (supir == nullptr)
+    if (currentDriver == nullptr)
     {
-        cout << "Tidak ada data supir." << endl;
+        membersihkanConsole();
+        cout << "Tidak ada pesanan yang sedang diproses." << endl;
+        return;
+    }
+    else
+    {
+        cout << "<==============================>" << endl;
+        cout << "Nama Sopir: " << currentDriver->data.nama << endl;
+        cout << "ID Sopir: " << currentDriver->data.id << endl;
+        cout << "Jenis Kelamin: " << ((currentDriver->data.jenisKelamin == 'L') ? "Laki-laki" : "Perempuan") << endl;
+        cout << "Tanggal Lahir: " << currentDriver->data.tanggalLahir.tanggal << "-" << currentDriver->data.tanggalLahir.bulan << "-" << currentDriver->data.tanggalLahir.tahun << endl;
+        cout << "Alamat: " << currentDriver->data.alamat << endl;
+        cout << "No HP: " << currentDriver->data.noHp << endl;
+    }
+}
+
+void supirSelanjutnya()
+{
+    if (currentDriver == nullptr)
+    {
+        membersihkanConsole();
+        cout << "Tidak ada Data supir tersedia" << endl;
         return;
     }
 
-    cout << "<==============================>" << endl;
-    cout << "ID       : " << supir->id << endl;
-    cout << "Nama     : " << supir->nama << endl;
-    cout << "Kelamin  : " << ((supir->jenisKelamin == 'L') ? "Laki-laki" : "Perempuan") << endl;
-    cout << "Tgl Lahir: " << supir->tanggalLahir.tanggal << "-" << supir->tanggalLahir.bulan << "-" << supir->tanggalLahir.tahun << endl;
-    cout << "Alamat   : " << supir->alamat << endl;
-    cout << "No HP    : " << supir->noHp << endl;
-}
-
-// Function to move to the next driver in the list
-void MoveToNextDriver()
-{
-    if (head != nullptr && head->next != nullptr)
+    if (currentDriver != nullptr && currentDriver->next != nullptr)
     {
-        if (head->next != nullptr)
-        {
-            head = head->next;
-            TampilkanDetailSupir(head);
-        }
-        else
-        {
-            cout << "Anda sudah berada pada data supir terakhir." << endl;
-        }
+        currentDriver = currentDriver->next;
+        membersihkanConsole();
+        cetakSupirSekarang();
     }
     else
     {
-        cout << "Tidak ada data supir." << endl;
+        membersihkanConsole();
+        cout << "Tidak ada data sopir berikutnya" << endl;
+        cetakSupirSekarang();
     }
 }
 
-// Function to move to the previous driver in the list
-void MoveToPreviousDriver()
+void supirSebelumnya()
 {
-    if (head != nullptr && head->next != nullptr)
+
+    if (currentDriver == nullptr)
     {
-        DataSupir *temp = head;
-        DataSupir *prev = nullptr;
-        while (temp->next != nullptr)
-        {
-            prev = temp;
-            temp = temp->next;
-        }
-        head = prev;
-        TampilkanDetailSupir(head);
+        membersihkanConsole();
+        cout << "Tidak ada data sopir yang tersedia." << endl;
+        return;
     }
-    else
+
+    if (currentDriver == firstDriver)
     {
-        cout << "Tidak ada data supir." << endl;
+        membersihkanConsole();
+        cout << "Tidak ada data sopir sebelumnya." << endl;
+        cetakSupirSekarang();
+        return;
     }
+
+    Node *temp = firstDriver;
+    while (temp->next != currentDriver)
+    {
+        temp = temp->next;
+    }
+    currentDriver = temp;
+    membersihkanConsole();
+    cetakSupirSekarang();
 }
 
 // Function to view driver data one by one with previous and next options
 void LihatDataSupir()
 {
-    if (head == nullptr)
+    if (currentDriver == nullptr)
     {
         cout << "Tidak ada data supir." << endl;
         return;
     }
 
-    if (head == nullptr)
-    {
-        head = head;
-    }
-
-    TampilkanDetailSupir(head);
-
-    int pilihan;
-    while (true)
+    Node *temp = currentDriver;
+    while (temp != nullptr)
     {
         cout << "<==============================>" << endl;
-        cout << "1) Berikutnya" << endl;
-        cout << "2) Sebelumnya" << endl;
-        cout << "3) Kembali" << endl;
-        cout << "> ";
-        cin >> pilihan;
-
-        switch (pilihan)
-        {
-        case 1:
-            MoveToNextDriver();
-            break;
-        case 2:
-            MoveToPreviousDriver();
-            break;
-        case 3:
-            membersihkanConsole();
-            cout << "Kembali ke menu utama" << endl;
-            return;
-        default:
-            membersihkanConsole();
-            cout << "Opsi tidak valid." << endl;
-            break;
-        }
+        cout << "ID       : " << temp->data.id << endl;
+        cout << "Nama     : " << temp->data.nama << endl;
+        cout << "Kelamin  : " << ((temp->data.jenisKelamin == 'L') ? "Laki-laki" : "Perempuan") << endl;
+        cout << "Tgl Lahir: " << temp->data.tanggalLahir.tanggal << "-" << temp->data.tanggalLahir.bulan << "-" << temp->data.tanggalLahir.tahun << endl;
+        cout << "Alamat   : " << temp->data.alamat << endl;
+        cout << "No HP    : " << temp->data.noHp << endl;
+        temp = temp->next;
     }
 }
-
 // Function to search driver data by ID
 
-DataSupir CariDataSupirById()
+Node CariDataSupirById()
 {
-    if (head == nullptr)
+    if (currentDriver == nullptr)
     {
         cout << "Tidak ada data supir." << endl;
-        return DataSupir();
+        return Node();
     }
 
     cout << "Masukkan ID Supir yang ingin dicari: ";
+
     string inputId;
     cin >> inputId;
 
-    DataSupir *current = head;
+    Node *current = currentDriver;
     while (current != nullptr)
     {
-        if (current->id == inputId)
+        if (current->data.id == inputId)
         {
             cout << "<==============================>" << endl;
-            cout << "ID       : " << current->id << endl;
-            cout << "Nama     : " << current->nama << endl;
-            cout << "Kelamin  : " << ((current->jenisKelamin == 'L') ? "Laki-laki" : "Perempuan") << endl;
-            cout << "Tgl Lahir: " << current->tanggalLahir.tanggal << "-" << current->tanggalLahir.bulan << "-" << current->tanggalLahir.tahun << endl;
-            cout << "Alamat   : " << current->alamat << endl;
-            cout << "No HP    : " << current->noHp << endl;
+            cout << "ID       : " << current->data.id << endl;
+            cout << "Nama     : " << current->data.nama << endl;
+            cout << "Kelamin  : " << ((current->data.jenisKelamin == 'L') ? "Laki-laki" : "Perempuan") << endl;
+            cout << "Tgl Lahir: " << current->data.tanggalLahir.tanggal << "-" << current->data.tanggalLahir.bulan << "-" << current->data.tanggalLahir.tahun << endl;
+            cout << "Alamat   : " << current->data.alamat << endl;
+            cout << "No HP    : " << current->data.noHp << endl;
             current = current->next;
         }
         else
         {
             cout << "Data supir dengan ID " << inputId << " tidak ditemukan." << endl;
-            return DataSupir();
+            return Node();
         }
     }
-    return DataSupir();
+    return Node();
 }
 
 // Function to edit driver data
 void EditDataSupir()
 {
-    if (head == nullptr)
+    if (currentDriver == nullptr)
     {
         cout << "Tidak ada data supir." << endl;
         return;
@@ -290,19 +673,19 @@ void EditDataSupir()
     cout << "Masukkan ID Supir yang ingin diubah: ";
     string inputId;
     cin >> inputId;
-    DataSupir *supirYangDiubah = head;
+    Node *supirYangDiubah = currentDriver;
     while (supirYangDiubah != nullptr)
     {
-        if (supirYangDiubah->id == inputId)
+        if (supirYangDiubah->data.id == inputId)
         {
             cout << "- Mengubah supir dengan Id " << inputId << " -" << endl;
             cout << "<==============================>" << endl;
-            cout << "ID       : " << supirYangDiubah->id << endl;
-            cout << "Nama     : " << supirYangDiubah->nama << endl;
-            cout << "Kelamin  : " << ((supirYangDiubah->jenisKelamin == 'L') ? "Laki-laki" : "Perempuan") << endl;
-            cout << "Tgl Lahir: " << supirYangDiubah->tanggalLahir.tanggal << "-" << supirYangDiubah->tanggalLahir.bulan << "-" << supirYangDiubah->tanggalLahir.tahun << endl;
-            cout << "Alamat   : " << supirYangDiubah->alamat << endl;
-            cout << "No HP    : " << supirYangDiubah->noHp << endl;
+            cout << "ID       : " << supirYangDiubah->data.id << endl;
+            cout << "Nama     : " << supirYangDiubah->data.nama << endl;
+            cout << "Kelamin  : " << ((supirYangDiubah->data.jenisKelamin == 'L') ? "Laki-laki" : "Perempuan") << endl;
+            cout << "Tgl Lahir: " << supirYangDiubah->data.tanggalLahir.tanggal << "-" << supirYangDiubah->data.tanggalLahir.bulan << "-" << supirYangDiubah->data.tanggalLahir.tahun << endl;
+            cout << "Alamat   : " << supirYangDiubah->data.alamat << endl;
+            cout << "No HP    : " << supirYangDiubah->data.noHp << endl;
             cout << "<==============================>" << endl;
             cout << "1. Ubah Nama" << endl;
             cout << "2. Ubah Kelamin" << endl;
@@ -319,20 +702,20 @@ void EditDataSupir()
             case 1:
                 cout << "Masukkan Nama yang baru: ";
                 cin.ignore();
-                getline(cin, supirYangDiubah->nama);
+                getline(cin, supirYangDiubah->data.nama);
                 break;
             case 2:
                 cout << "Masukkan Kelamin yang baru (L/P): ";
-                cin >> supirYangDiubah->jenisKelamin;
+                cin >> supirYangDiubah->data.jenisKelamin;
                 break;
             case 3:
                 cout << "Masukkan Alamat yang baru: ";
                 cin.ignore();
-                getline(cin, supirYangDiubah->alamat);
+                getline(cin, supirYangDiubah->data.alamat);
                 break;
             case 4:
                 cout << "Masukkan Tanggal Lahir yang baru (dd-mm-yyyy): ";
-                cin >> supirYangDiubah->tanggalLahir.tanggal >> supirYangDiubah->tanggalLahir.bulan >> supirYangDiubah->tanggalLahir.tahun;
+                cin >> supirYangDiubah->data.tanggalLahir.tanggal >> supirYangDiubah->data.tanggalLahir.bulan >> supirYangDiubah->data.tanggalLahir.tahun;
                 break;
             case 5:
                 membersihkanConsole();
@@ -354,7 +737,7 @@ void EditDataSupir()
 // Function to delete driver data
 void HapusDataSupir()
 {
-    if (head == nullptr)
+    if (currentDriver == nullptr)
     {
         cout << "Tidak ada data supir yang tersedia." << endl;
         return;
@@ -364,22 +747,22 @@ void HapusDataSupir()
     string inputId;
     cin >> inputId;
 
-    DataSupir *current = head;
-    DataSupir *previous = nullptr;
+    Node *current = currentDriver;
+    Node *previous = nullptr;
 
     while (current != nullptr)
     {
-        if (current->id == inputId)
+        if (current->data.id == inputId)
         {
             membersihkanConsole();
             cout << "<==============================>" << endl;
             cout << "\nSupir dengan data berikut akan dihapus :" << endl;
-            cout << "Nama     : " << current->nama << endl;
-            cout << "ID       : " << current->id << endl;
-            cout << "Kelamin  : " << ((current->jenisKelamin == 'L') ? "Laki-laki" : "Perempuan") << endl;
-            cout << "Tgl Lahir: " << current->tanggalLahir.tanggal << "-" << current->tanggalLahir.bulan << "-" << current->tanggalLahir.tahun << endl;
-            cout << "Alamat   : " << current->alamat << endl;
-            cout << "No HP    : " << current->noHp << endl;
+            cout << "Nama     : " << current->data.nama << endl;
+            cout << "ID       : " << current->data.id << endl;
+            cout << "Kelamin  : " << ((current->data.jenisKelamin == 'L') ? "Laki-laki" : "Perempuan") << endl;
+            cout << "Tgl Lahir: " << current->data.tanggalLahir.tanggal << "-" << current->data.tanggalLahir.bulan << "-" << current->data.tanggalLahir.tahun << endl;
+            cout << "Alamat   : " << current->data.alamat << endl;
+            cout << "No HP    : " << current->data.noHp << endl;
             cout << "<==============================>" << endl;
 
             cout << "apakah supir dengan id " << inputId << " yang dihapus? (y/n) : ";
@@ -393,7 +776,7 @@ void HapusDataSupir()
             }
             else if (previous == nullptr)
             {
-                head = current->next;
+                currentDriver = current->next;
             }
             else
             {
@@ -412,7 +795,7 @@ void HapusDataSupir()
 }
 
 // admin role
-void AdminPriviliage()
+void AdminPriviliage(StackMobil &stack)
 {
     int pilihanAdmin;
     do
@@ -425,7 +808,8 @@ void AdminPriviliage()
         cout << "4) Edit Data Supir " << endl;
         cout << "5) Menambah Data Supir " << endl;
         cout << "6) Proses Pesanan " << endl;
-        cout << "7) Kembali" << endl;
+        cout << "7) Tambah Unit Mobil " << endl;
+        cout << "8) Kembali" << endl;
         cout << "<==============================>" << endl;
         cout << "> ";
         cin >> pilihanAdmin;
@@ -460,9 +844,14 @@ void AdminPriviliage()
         case 6:
             membersihkanConsole();
             cout << "Proses Pesanan" << endl;
-            //**TODO: Add order processing function
+            prosesPesanan(stack);
             break;
+
         case 7:
+            membersihkanConsole();
+            cout << "Tambah Unit Mobil" << endl;
+            tambahUnitMobil(stack);
+        case 8:
             membersihkanConsole();
             cout << "Kembali ke menu utama" << endl;
             return;
@@ -477,17 +866,16 @@ void AdminPriviliage()
 }
 
 // user role
-void UserPrivilage()
+void UserPrivilage(StackMobil &stack)
 {
     int pilihan;
     while (true)
     {
-
         cout << "<==============================>" << endl;
         cout << "User Menu:" << endl;
-        cout << "1) Next " << endl;
-        cout << "2) Previous" << endl;
-        cout << "3) Order" << endl;
+        cout << "1) Order By Id " << endl;
+        cout << "2) Supir Selanjutnya" << endl;
+        cout << "3) Supir sebelumnya" << endl;
         cout << "4) Kembali" << endl;
         cout << "<==============================>" << endl;
         cout << "> ";
@@ -497,21 +885,22 @@ void UserPrivilage()
         {
         case 1:
             membersihkanConsole();
-            cout << "Next Page" << endl;
-            LihatDataSupir();
+            cout << "Order By Id" << endl;
+            orderTaxi(stack);
             break;
-
         case 2:
-            membersihkanConsole();
-            cout << "Previous" << endl;
-            return;
+            supirSelanjutnya();
+            cout << "Supir Selanjutnya" << endl;
+            break;
         case 3:
-            membersihkanConsole();
-            cout << "Order" << endl;
+            supirSebelumnya();
+            cout << "Supir Sebelumnya" << endl;
+            break;
         case 4:
             membersihkanConsole();
             cout << "Kembali ke menu utama" << endl;
             return;
+
         default:
             membersihkanConsole();
             cout << " Opsi Tidak Valid                  " << endl;
@@ -522,12 +911,12 @@ void UserPrivilage()
 }
 
 // Function to delete all driver data
-void hapusSemuaSopir(DataSupir *head)
+void hapusSemuaSopir(Node *saatIni)
 {
-    DataSupir *current = head;
+    Node *current = saatIni;
     while (current != nullptr)
     {
-        DataSupir *next = current->next;
+        Node *next = current->next;
         delete current;
         current = next;
     }
@@ -536,48 +925,31 @@ void hapusSemuaSopir(DataSupir *head)
 // Function to initialize dummy data
 void InitializeDummyData()
 {
-    DataSupir *supir1 = new DataSupir;
-    supir1->id = "D001";
-    supir1->nama = "John Doe";
-    supir1->jenisKelamin = 'L';
-    supir1->tanggalLahir.tanggal = 15;
-    supir1->tanggalLahir.bulan = 5;
-    supir1->tanggalLahir.tahun = 1985;
-    supir1->alamat = "123 Street, City";
-    supir1->noHp = "1234567890";
-    supir1->next = nullptr;
+    DataSupir supir1 = {"02130", "Sugeng Pangestu", "Surabaya", {19, 2, 1999}, 'L', "123456789"};
+    DataSupir supir2 = {"07180", "M Farhan Nabil", "Palembang", {20, 3, 2005}, 'P', "987654321"};
+    // Initialize the first driver
+    Node *newDriver1 = new Node;
+    newDriver1->data = supir1;
+    newDriver1->next = nullptr;
+    firstDriver = newDriver1;
 
-    DataSupir *supir2 = new DataSupir;
-    supir2->id = "D002";
-    supir2->nama = "Jane Doe";
-    supir2->jenisKelamin = 'P';
-    supir2->tanggalLahir.tanggal = 20;
-    supir2->tanggalLahir.bulan = 8;
-    supir2->tanggalLahir.tahun = 1990;
-    supir2->alamat = "456 Avenue, Town";
-    supir2->noHp = "9876543210";
-    supir2->next = nullptr;
+    // Initialize the second driver
+    Node *newDriver2 = new Node;
+    newDriver2->data = supir2;
+    newDriver2->next = nullptr;
+    firstDriver->next = newDriver2;
 
-    // Add dummy data to the linked list
-    if (head == nullptr)
-    {
-        head = supir1;
-        supir1->next = supir2;
-    }
-    else
-    {
-        DataSupir *temp = head;
-        while (temp->next != nullptr)
-        {
-            temp = temp->next;
-        }
-        temp->next = supir1;
-        supir1->next = supir2;
-    }
+    StackMobil stack;
 }
 int main()
 {
+    StackMobil stack;
+    stack.top = -1;
+    Node *head = nullptr;
     InitializeDummyData();
+    currentDriver = firstDriver;
+    prevDriver = nullptr;
+
     membersihkanConsole();
     cout << " Selamat Datang " << endl;
     cout << " di Project Supir " << endl;
@@ -599,11 +971,13 @@ int main()
         {
         case 1:
             membersihkanConsole();
-            AdminPriviliage();
+            AdminPriviliage(stack);
             break;
         case 2:
             membersihkanConsole();
-            UserPrivilage();
+            cetakSupirSekarang();
+
+            UserPrivilage(stack);
             break;
         case 3:
         {
@@ -621,7 +995,7 @@ int main()
             if (opsi_keluar == 'y' || opsi_keluar == 'Y')
             {
                 membersihkanConsole();
-                hapusSemuaSopir(head);
+                hapusSemuaSopir(currentDriver);
                 return 0;
             }
             else if (opsi_keluar == 'n' || opsi_keluar == 'N')
@@ -645,6 +1019,6 @@ int main()
             break;
         }
     }
-
+    hapusSemuaSopir(currentDriver);
     return 0;
 }
